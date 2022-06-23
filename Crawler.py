@@ -3,9 +3,12 @@ from selenium.webdriver.common.keys import Keys
 from urllib.parse import quote_plus
 from urllib.request import urlopen
 from openpyxl import Workbook
-import time
+from docx import Document
+from docx.shared import Inches
+import test1
 import os
 import datetime
+
 
 # When there are no folder 
 def folder_prob(directory):
@@ -24,24 +27,29 @@ def save_imgs(images, save_path):
         file.write(t)
         print("img save " + save_path + str(index + 1) + ".jpg")
 
+
+
 # User input
 site, topic, type, num, save_path = input().split()
 num = int(num)
 
 if site == "google":
-    url = "http://www.google.com/search?q=" + topic + "&source=lmns&bih=722&biw=1536&hl=ko&sa=X&ved=2ahUKEwj8zsz-rsH4AhUE26QKHQExCioQ_AUoAHoECAEQAA"
+    url = "http://www.google.com/search?q=" + topic + "&biw=746&bih=722&tbm=nws&sxsrf=ALiCzsYTcS6ApgPEDHY1n8eHDVcx5eLRvQ%3A1655968306018&source=hp&ei=MRK0YoihPOTHmAXl36SwBA&iflsig=AJiK0e8AAAAAYrQgQkDBh1WBzdR_C9dNxcyVMUqDkUI5&ved=0ahUKEwjI_YzVgsP4AhXkI6YKHeUvCUYQ4dUDCAk&uact=5&oq=ㄱㄱ&gs_lcp=Cgxnd3Mtd2l6LW5ld3MQAzIICAAQgAQQsQMyCwgAEIAEELEDEIMBMggIABCABBCxAzILCAAQgAQQsQMQgwEyCwgAEIAEELEDEIMBMgsIABCABBCxAxCDATIECAAQAzIFCAAQgAQyBQgAEIAEMgUIABCABFAAWKECYKcFaABwAHgAgAGwAYgBvgKSAQMwLjKYAQCgAQE&sclient=gws-wiz-news"
+    headline = "WlydOe"
     if type == "img":
         url ="https://images.google.com/search?q=" + topic + "&tbm=isch&sxsrf=ALiCzsafEkKE1WFqp9nWWIXLSpccWSoB0Q%3A1655910957657&source=hp&biw=1536&bih=722&ei=LTKzYoiRJZDrsAfxzJaABA&iflsig=AJiK0e8AAAAAYrNAPTnG88ayH60tfMErSTNGSwCHvcn2&oq=두햐ㅜㄷ&gs_lcp=CgNpbWcQAxgCMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABFAAWNoIYManCmgBcAB4AYABuwKIAZcNkgEFMi01LjGYAQCgAQGqAQtnd3Mtd2l6LWltZw&sclient=img"
         img = "rg_i"
 
 elif site == "naver":
-    url = "https://www.naver.com/search.naver?where=nexearch&sm=tab_jum&query=" + topic
+    url = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query=" + topic
+    headline ="news_tit"
     if type == "img":
         url ="https://search.naver.com/search.naver?where=image&section=image&query=" + topic
         img = "_image"
 
 else:
-    url = "https://www.daum.net/search?w=tot&DA=YZR&t__nil_searchbox=btn&sug=&sugo=&sq=&o=&q=" + topic
+    url = "https://search.daum.net/search?w=news&nil_search=btn&DA=NTB&enc=utf8&cluster=y&cluster_page=1&q=" + topic
+    headline = "tit_main"
     if type == "img":
         url ="https://search.daum.net/search?w=img&nil_search=btn&DA=NTB&enc=utf8&q=" + topic
         img = "thumb_img"
@@ -53,8 +61,22 @@ driver.get(url)
 
 # Input is Doc
 if type == "doc":
-    elem = driver.find_elements_by_class_name(".LC20lb.MBeuO.DKV0Md")
+    headlines = driver.find_elements_by_class_name(headline)
 
+    document = Document()
+    document.add_heading(topic, 0)
+    if site == "google":
+        
+        for i in headlines[:num]:
+            text = driver.find_element_by_css_selector('div[role="heading"][aria-level="3"]').get_attribute('innerText')
+            href = i.get_attribute('href')
+            document.add_paragraph(text)
+            document.add_paragraph(href)   
+    else:
+        for i in headlines[:num]:
+            document.add_paragraph(i.text)
+            document.add_paragraph(i.get_attribute('href'))
+    document.save(save_path + topic + ".docx")
 
 # Input is excel
 elif type == "excel":
@@ -72,5 +94,6 @@ else:
     folder_prob(save_path)
     save_imgs(imgs, save_path)
 
-driver.close()
-# assert "No results found." not in driver.page_source
+# driver.close()
+# google 이준석 doc 3 C:/Python/selenium
+# naver 이준석 doc 3 C:/Python/selenium
