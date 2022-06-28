@@ -1,3 +1,5 @@
+from ast import keyword
+from xml.dom.expatbuilder import TEXT_NODE
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from urllib.parse import quote_plus
@@ -5,10 +7,9 @@ from urllib.request import urlopen
 from openpyxl import Workbook
 from docx import Document
 from docx.shared import Inches
-import test1
 import os
 import datetime
-
+import sys, getopt
 
 # When there are no folder 
 def folder_prob(directory):
@@ -19,81 +20,296 @@ def folder_prob(directory):
         print('Error: Creating directory. ' + directory)
 
 # Saving images
-def save_imgs(images, save_path):
-    for index, image in enumerate(images[:num]):
+def save_imgs(imgs, num, keyword, save_path):
+    for index, image in enumerate(imgs[:num]):  # images[:크롤링하고 싶은 사진 개수]
         src = image.get_attribute('src')
         t = urlopen(src).read()
-        file = open(os.path.join(save_path, str(index + 1) + ".jpg"), "wb")
+        time = datetime.datetime.today().strftime ('%Y%m%d')
+        file = open(os.path.join(save_path, time + "_" + keyword + str(index + 1) + ".jpg"), "wb")
         file.write(t)
-        print("img save " + save_path + str(index + 1) + ".jpg")
+        print("img save " + save_path + time + "_" + keyword + str(index + 1) + ".jpg")
 
 
+def main(argv):
+    FILE_NAME = argv[0] # command line arguments의 첫번째는 파일명
+    SITE = "google"
+    KEYWORD = ""
+    EXCLUDE = "ㅈ"
+    TYPE = "excel"
+    NUM = 10
+    SAVE_PATH = os.getcwd() + "/"
 
-# User input
-site, topic, type, num, save_path = input().split()
-num = int(num)
+    try:
+        opts, etc_args = getopt.getopt(argv[1:], \
+        "hs:k:e:t:n:sp:", ["help","site=","keyword=", "exclude=", "type=", "number=", "savepath="])
 
-if site == "google":
-    url = "http://www.google.com/search?q=" + topic + "&biw=746&bih=722&tbm=nws&sxsrf=ALiCzsYTcS6ApgPEDHY1n8eHDVcx5eLRvQ%3A1655968306018&source=hp&ei=MRK0YoihPOTHmAXl36SwBA&iflsig=AJiK0e8AAAAAYrQgQkDBh1WBzdR_C9dNxcyVMUqDkUI5&ved=0ahUKEwjI_YzVgsP4AhXkI6YKHeUvCUYQ4dUDCAk&uact=5&oq=ㄱㄱ&gs_lcp=Cgxnd3Mtd2l6LW5ld3MQAzIICAAQgAQQsQMyCwgAEIAEELEDEIMBMggIABCABBCxAzILCAAQgAQQsQMQgwEyCwgAEIAEELEDEIMBMgsIABCABBCxAxCDATIECAAQAzIFCAAQgAQyBQgAEIAEMgUIABCABFAAWKECYKcFaABwAHgAgAGwAYgBvgKSAQMwLjKYAQCgAQE&sclient=gws-wiz-news"
-    headline = "WlydOe"
-    if type == "img":
-        url ="https://images.google.com/search?q=" + topic + "&tbm=isch&sxsrf=ALiCzsafEkKE1WFqp9nWWIXLSpccWSoB0Q%3A1655910957657&source=hp&biw=1536&bih=722&ei=LTKzYoiRJZDrsAfxzJaABA&iflsig=AJiK0e8AAAAAYrNAPTnG88ayH60tfMErSTNGSwCHvcn2&oq=두햐ㅜㄷ&gs_lcp=CgNpbWcQAxgCMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABFAAWNoIYManCmgBcAB4AYABuwKIAZcNkgEFMi01LjGYAQCgAQGqAQtnd3Mtd2l6LWltZw&sclient=img"
-        img = "rg_i"
+    except getopt.GetoptError: # 옵션지정이 올바르지 않은 경우
+        print(FILE_NAME, '-s <site> -k <keyword>')
+        sys.exit(2)
 
-elif site == "naver":
-    url = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query=" + topic
-    headline ="news_tit"
-    if type == "img":
-        url ="https://search.naver.com/search.naver?where=image&section=image&query=" + topic
-        img = "_image"
+    for opt, arg in opts: # 옵션이 파싱된 경우
+        if opt in ("-h", "--help"): # HELP 요청인 경우 사용법 출력
+            print(FILE_NAME, '-s <site> -k <keyword>')
+            sys.exit()
 
-else:
-    url = "https://search.daum.net/search?w=news&nil_search=btn&DA=NTB&enc=utf8&cluster=y&cluster_page=1&q=" + topic
-    headline = "tit_main"
-    if type == "img":
-        url ="https://search.daum.net/search?w=img&nil_search=btn&DA=NTB&enc=utf8&q=" + topic
-        img = "thumb_img"
+        elif opt in ("-s", "--site"):
+            SITE = arg
 
-# Opening Browser
-driver = webdriver.Chrome("C:\Python\selenium\chromedriver.exe")
-driver.implicitly_wait(3)
-driver.get(url)
+        elif opt in ("-k", "--keyword"):
+            KEYWORD = arg
 
-# Input is Doc
-if type == "doc":
-    headlines = driver.find_elements_by_class_name(headline)
+        elif opt in ("-e", "--exclude"):
+            EXCLUDE = arg
 
-    document = Document()
-    document.add_heading(topic, 0)
+        elif opt in ("-t", "--type"):
+            TYPE = arg
+
+        elif opt in ("-n", "--number"):
+            NUM = arg
+
+        elif opt in ("-sp", "--savepath"):
+            SAVE_PATH = arg
+
+    if len(KEYWORD) < 1: # 필수항목 값이 비어있다면
+        print(FILE_NAME, "-k option is mandatory") # 필수임을 출력
+        sys.exit(2)
+
+    print("SITE:",  SITE)
+    print("KEYWORD:", KEYWORD)
+    print("EXCLUDE:",  EXCLUDE)
+    print("TYPE:",  TYPE)
+    print("NUM:",  NUM)
+    print("SAVE_PATH:",  SAVE_PATH)
+
+    crawling(SITE, KEYWORD, EXCLUDE, TYPE, NUM, SAVE_PATH)
+
+def crawling(site, keyword, exclude, type, num, save_path):
+    import time
+    num = int(num)
+
     if site == "google":
-        
-        for i in headlines[:num]:
-            text = driver.find_element_by_css_selector('div[role="heading"][aria-level="3"]').get_attribute('innerText')
-            href = i.get_attribute('href')
-            document.add_paragraph(text)
-            document.add_paragraph(href)   
+        headline = "WlydOe"
+        pgNum = 0
+        pgNum = str(pgNum)
+        url = "http://www.google.com/search?q=" + keyword + "&biw=746&bih=722&tbm=nws&start=" + pgNum
+
+        if type == "img":
+            url ="https://images.google.com/search?q=" + keyword + "&tbm=isch&"
+            img = "rg_i"
+
+    elif site == "naver":
+        headline ="news_tit"
+        pgNum = 1
+        pgNum = str(pgNum)
+        url = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query=" + keyword + "&start=" + pgNum
+
+        if type == "img":
+            url ="https://search.naver.com/search.naver?where=image&section=image&query=" + keyword
+            img = "_image"
+
     else:
-        for i in headlines[:num]:
-            document.add_paragraph(i.text)
-            document.add_paragraph(i.get_attribute('href'))
-    document.save(save_path + topic + ".docx")
+        headline = "tit_main"
+        pgNum = 0
+        pgNum = str(pgNum)
+        url = "https://search.daum.net/search?w=news&DA=PGD&enc=utf&cluster_page=1&q=" + keyword + "&p=" + pgNum
 
-# Input is excel
-elif type == "excel":
-    wb = Workbook()
-    wb.create_sheet(topic)
-    sheet = wb[topic]
-    sheet.append(["Title", "URL"])
-    wb.save(save_path)
+        if type == "img":
+            url ="https://search.daum.net/search?w=img&nil_search=btn&DA=NTB&enc=utf8&q=" + keyword
+            img = "thumb_img"
 
-    elem = driver.find_elements_by_class_name()
+    # Opening Browser
+    webdriver_options = webdriver.ChromeOptions()
+    webdriver_options .add_argument('headless')
+    chromedriver = 'C:\Python\selenium\chromedriver.exe'
+    driver = webdriver.Chrome(chromedriver, options=webdriver_options )
 
-# Input is image
-else:
-    imgs = driver.find_elements_by_class_name(img)
-    folder_prob(save_path)
-    save_imgs(imgs, save_path)
+    driver.implicitly_wait(3)
+    driver.get(url)
 
-# driver.close()
-# google 이준석 doc 3 C:/Python/selenium
-# naver 이준석 doc 3 C:/Python/selenium
+    # Input is Doc
+    if type == "doc":
+        document = Document()
+        document.add_heading(keyword, 0)
+        
+        if num > 20:
+            num += 10
+
+        if site == "google":
+            count = 0
+            while num > 0:
+                headlines = driver.find_elements_by_class_name(headline)
+                titles = driver.find_elements_by_css_selector('div[role="heading"][aria-level="3"]')
+
+                for i, elem in enumerate(headlines[:num]):
+                    text = titles[i].get_attribute('innerText')
+                    href = elem.get_attribute('href')
+                    exclude = str(exclude)
+                    if exclude in text:
+                        continue
+                    document.add_paragraph(text)
+                    document.add_paragraph(href) 
+                    count += 1
+
+                num -= count
+                pgNum = int(pgNum)
+                pgNum += 10
+                pgNum = str(pgNum)
+                url = "http://www.google.com/search?q=" + keyword + "&biw=746&bih=722&tbm=nws&start=" + pgNum
+                driver.get(url)
+                time.sleep(3)
+
+        elif site == "naver":
+            count = 0
+            while num > 0:
+                headlines = driver.find_elements_by_class_name(headline)
+
+                for i in headlines[:num]:
+                    text = i.text
+                    text = str(text)
+                    href = i.get_attribute('href')
+                    exclude = str(exclude)
+                    if exclude in text:
+                        continue
+                    document.add_paragraph(text)
+                    document.add_paragraph(href)
+                    count += 1
+
+                num -= count
+                pgNum = int(pgNum)
+                pgNum += 10
+                pgNum = str(pgNum)
+                url = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query=" + keyword + "&start=" + pgNum
+                driver.get(url)
+                time.sleep(3)
+
+        else:
+            count = 0
+            pgNum = 1 
+            while num > 0:
+                headlines = driver.find_elements_by_class_name(headline)
+
+                for i in headlines[:num]:
+                    text = i.text
+                    text = str(text)
+                    href = i.get_attribute('href')
+                    exclude = str(exclude)
+                    if exclude in text:
+                        continue
+                    document.add_paragraph(text)
+                    document.add_paragraph(href)
+                    count += 1
+
+                num -= count
+                pgNum = int(pgNum)
+                pgNum += 1
+                pgNum = str(pgNum)
+                url = "https://search.daum.net/search?w=img&nil_search=btn&DA=NTB&enc=utf8&q=" + keyword + "&p=" + pgNum
+                driver.get(url)
+                time.sleep(3)
+
+        time = datetime.datetime.today().strftime ('%Y%m%d')
+        document.save(save_path + time + "_" + keyword + ".docx")
+
+    # Input is excel
+    elif type == "excel":
+        wb = Workbook()
+        ws = wb.active
+        ws.append(["Title", "URL"])
+        count = 0
+        
+        if num > 20:
+            num += 10
+
+        if site == "google":
+            while num > 0:
+                headlines = driver.find_elements_by_class_name(headline)
+                titles = driver.find_elements_by_css_selector('div[role="heading"][aria-level="3"]')
+
+                for i, elem in enumerate(headlines[:num]):
+                    text = titles[i].get_attribute('innerText')
+                    href = elem.get_attribute('href')
+                    exclude = str(exclude)
+                    if exclude in text:
+                        continue
+                    count += 1
+                    ws.append([text, href])
+
+                num -= count
+                pgNum = int(pgNum)
+                pgNum += 10
+                pgNum = str(pgNum)
+                url = "http://www.google.com/search?q=" + keyword + "&biw=746&bih=722&tbm=nws&start=" + pgNum
+                driver.get(url)
+                time.sleep(3)
+
+        elif site == "naver":
+            count = 0
+            while num > 0:
+                headlines = driver.find_elements_by_class_name(headline)
+
+                for i in headlines[:num]:
+                    text = i.text
+                    href = i.get_attribute('href')
+                    exclude = str(exclude)
+                    if exclude in text:
+                        continue
+                    count += 1
+                    ws.append([text, href])
+
+                num -= count
+                pgNum = int(pgNum)
+                pgNum += 10
+                pgNum = str(pgNum)
+                url = "https://search.naver.com/search.naver?where=news&sm=tab_jum&query=" + keyword + "&start=" + pgNum
+                driver.get(url)
+                time.sleep(3) 
+
+        else:
+            count = 0
+            pgNum = 1
+            while num > 0:
+                headlines = driver.find_elements_by_class_name(headline)
+
+                for i in headlines[:num]:
+                    text = i.text
+                    href = i.get_attribute('href')
+                    exclude = str(exclude)
+                    if exclude in text:
+                        continue
+                    count += 1
+                    ws.append([text, href])
+
+                num -= count
+                pgNum = int(pgNum)
+                pgNum += 1
+                pgNum = str(pgNum)
+                url = "https://search.daum.net/search?w=img&nil_search=btn&DA=NTB&enc=utf8&q=" + keyword + "&p=" + pgNum
+                driver.get(url)
+                time.sleep(3) 
+
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter # Get the column name
+
+            for cell in col:
+                try: # Necessary to avoid error on empty cells
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = (max_length + 2) * 1.2
+            ws.column_dimensions[column].width = adjusted_width
+        time = datetime.datetime.today().strftime ('%Y%m%d')
+        time = str(time)       
+        wb.save(save_path + time + "_" + keyword + ".xlsx")
+
+    # Input is image
+    else:
+        imgs = driver.find_elements_by_class_name(img)
+        folder_prob(save_path)
+        save_imgs(imgs, num, keyword, save_path)
+
+    driver.close()
+
+if __name__ == "__main__":
+    main(sys.argv)
