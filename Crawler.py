@@ -1,3 +1,4 @@
+from selenium.webdriver.common.by import By
 from ast import keyword
 from xml.dom.expatbuilder import TEXT_NODE
 from selenium import webdriver
@@ -119,8 +120,9 @@ def crawling(site, keyword, exclude, type, num, save_path):
 
     # Opening Browser
     webdriver_options = webdriver.ChromeOptions()
-    webdriver_options .add_argument('headless')
-    chromedriver = 'C:\Python\selenium\chromedriver.exe'
+    webdriver_options .add_argument('--headless')
+    webdriver_options .add_argument('--no-sandbox')
+    chromedriver = os.getcwd() + "/chromedriver"
     driver = webdriver.Chrome(chromedriver, options=webdriver_options )
 
     driver.implicitly_wait(3)
@@ -137,8 +139,8 @@ def crawling(site, keyword, exclude, type, num, save_path):
         if site == "google":
             count = 0
             while num > 0:
-                headlines = driver.find_elements_by_class_name(headline)
-                titles = driver.find_elements_by_css_selector('div[role="heading"][aria-level="3"]')
+                headlines = driver.find_elements(By.CLASS_NAME, headline)
+                titles = driver.find_elements(By.CSS_SELECTOR, 'div[role="heading"][aria-level="3"]')
 
                 for i, elem in enumerate(headlines[:num]):
                     text = titles[i].get_attribute('innerText')
@@ -161,7 +163,7 @@ def crawling(site, keyword, exclude, type, num, save_path):
         elif site == "naver":
             count = 0
             while num > 0:
-                headlines = driver.find_elements_by_class_name(headline)
+                headlines = driver.find_elements(By.CLASS_NAME, headline)
 
                 for i in headlines[:num]:
                     text = i.text
@@ -186,7 +188,7 @@ def crawling(site, keyword, exclude, type, num, save_path):
             count = 0
             pgNum = 1 
             while num > 0:
-                headlines = driver.find_elements_by_class_name(headline)
+                headlines = driver.find_elements(By.CLASS_NAME, headline)
 
                 for i in headlines[:num]:
                     text = i.text
@@ -222,8 +224,8 @@ def crawling(site, keyword, exclude, type, num, save_path):
 
         if site == "google":
             while num > 0:
-                headlines = driver.find_elements_by_class_name(headline)
-                titles = driver.find_elements_by_css_selector('div[role="heading"][aria-level="3"]')
+                headlines = driver.find_elements(By.CLASS_NAME, headline)
+                titles = driver.find_elements(By.CSS_SELECTOR, 'div[role="heading"][aria-level="3"]')
 
                 for i, elem in enumerate(headlines[:num]):
                     text = titles[i].get_attribute('innerText')
@@ -245,7 +247,7 @@ def crawling(site, keyword, exclude, type, num, save_path):
         elif site == "naver":
             count = 0
             while num > 0:
-                headlines = driver.find_elements_by_class_name(headline)
+                headlines = driver.find_elements(By.CLASS_NAME, headline)
 
                 for i in headlines[:num]:
                     text = i.text
@@ -268,7 +270,7 @@ def crawling(site, keyword, exclude, type, num, save_path):
             count = 0
             pgNum = 1
             while num > 0:
-                headlines = driver.find_elements_by_class_name(headline)
+                headlines = driver.find_elements(By.CLASS_NAME, headline)
 
                 for i in headlines[:num]:
                     text = i.text
@@ -305,7 +307,7 @@ def crawling(site, keyword, exclude, type, num, save_path):
 
     # Input is image
     else:
-        imgs = driver.find_elements_by_class_name(img)
+        imgs = driver.find_elements(By.CLASS_NAME, img)
         folder_prob(save_path)
         save_imgs(imgs, num, keyword, save_path)
 
